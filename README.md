@@ -2,8 +2,6 @@
 
 **Cherish** is a beautifully crafted Flutter application designed to help users remember and celebrate birthdays with elegance. It supports both **Gregorian calendar** and **Hindu calendar** birthdays, offering a culturally inclusive and thoughtful experience.
 
----
-
 ## Features
 
 **Add new birthday form**
@@ -24,8 +22,6 @@
     -   Age
     -   Relation
     -   Reference
-
----
 
 ## Storage:
 
@@ -48,17 +44,19 @@ CREATE TABLE birthdays (
 );
 ```
 
----
-
 ## Tech Stack
 
 <p align="left">
-  <img src="https://img.icons8.com/color/48/flutter.png" width="40" alt="Flutter"/>
-  <img src="https://img.icons8.com/color/48/dart.png" width="40" alt="Dart"/>
-  <img src="https://img.icons8.com/ios-filled/48/4a90e2/sqlite.png" width="40" alt="SQLite"/>
+  <a href="https://flutter.dev" target="_blank">
+    <img src="https://img.icons8.com/color/48/flutter.png" width="40" alt="Flutter"/>
+  </a>
+  <a href="https://dart.dev" target="_blank">
+    <img src="https://img.icons8.com/color/48/dart.png" width="40" alt="Dart"/>
+  </a>
+  <a href="https://www.sqlite.org/index.html" target="_blank">
+    <img src="https://img.icons8.com/ios-filled/48/4a90e2/sqlite.png" width="40" alt="SQLite"/>
+  </a>
 </p>
-
----
 
 ## Project Structure (So far)
 
@@ -81,8 +79,6 @@ lib/
 
 ```
 
----
-
 ## Planned Features
 
 -   **Cloud Backup** – Sync birthdays to the cloud for safe storage
@@ -91,8 +87,6 @@ lib/
 -   **Contact Integration** – One-tap messaging with pre-filled birthday wishes
 -   **Sorting & Filtering** – Organize birthdays by relation, name, or date
 -   **Hindu Calendar Support** – Enhanced tithi-based birthday tracking _(Planned for v2.0_)
-
----
 
 ## Vision
 
