@@ -2,18 +2,23 @@ import 'package:cherish/models/birthday.dart';
 import 'package:cherish/utils/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:cherish/temp_data/sample_data.dart';
 import 'package:provider/provider.dart';
 import 'package:cherish/widgets/add_birthday_form.dart';
+import 'package:cherish/db/birthday_database.dart';
+import 'package:lottie/lottie.dart';
 
-class Gregorian extends StatelessWidget {
+class Gregorian extends StatefulWidget {
   const Gregorian({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final themeController = Provider.of<ThemeController>(context);
-    final palette = themeController.getPalette(brightness);
+  State<Gregorian> createState() => _GregorianState();
+}
+
+class _GregorianState extends State<Gregorian> {
+  List<_GroupedItem> displayItems = [];
+
+  Future<void> fetchAndGroupBirthdays() async {
+    final dbBirthdays = await BirthdayDatabase.instance.fetchAllBirthdays();
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -22,37 +27,13 @@ class Gregorian extends StatelessWidget {
     final List<Birthday> todayList = [];
     final List<Birthday> tomorrowList = [];
     final List<Birthday> laterThisMonth = [];
-    final List<Birthday> allFutureBirthdays = [];
+    final List<Birthday> allFutureBirthdays = List.from(dbBirthdays);
 
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sept",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
+    allFutureBirthdays.sort(
+      (a, b) => _nextBirthday(a).compareTo(_nextBirthday(b)),
+    );
 
-    for (final b in sampleBirthdays) {
-      // final birthdayThisaYear = DateTime(now.year, b.month, b.day);
-      // final nextBirthday = birthdayThisaYear.isBefore(today)
-      //     ? DateTime(now.year + 1, b.month, b.day)
-      //     : birthdayThisaYear;
-
-      allFutureBirthdays.add(b);
-    }
-
-    allFutureBirthdays.sort((a, b) {
-      return _nextBirthday(a).compareTo(_nextBirthday(b));
-    });
-
-    final List<_GroupedItem> displayItems = [];
+    final List<_GroupedItem> updatedDisplayItems = [];
 
     for (final b in allFutureBirthdays) {
       final birthday = DateTime(now.year, b.month, b.day);
@@ -72,18 +53,18 @@ class Gregorian extends StatelessWidget {
     };
 
     if (todayList.isNotEmpty) {
-      displayItems.add(_GroupedItem.header("Today"));
-      _addSorted(displayItems, todayList);
+      updatedDisplayItems.add(_GroupedItem.header("Today"));
+      _addSorted(updatedDisplayItems, todayList);
     }
 
     if (tomorrowList.isNotEmpty) {
-      displayItems.add(_GroupedItem.header("Tomorrow"));
-      _addSorted(displayItems, tomorrowList);
+      updatedDisplayItems.add(_GroupedItem.header("Tomorrow"));
+      _addSorted(updatedDisplayItems, tomorrowList);
     }
 
     if (laterThisMonth.isNotEmpty) {
-      displayItems.add(_GroupedItem.header("Later in This Month"));
-      _addSorted(displayItems, laterThisMonth);
+      updatedDisplayItems.add(_GroupedItem.header("Later in This Month"));
+      _addSorted(updatedDisplayItems, laterThisMonth);
     }
 
     DateTime? lastHeaderDate;
@@ -91,19 +72,52 @@ class Gregorian extends StatelessWidget {
       if (special.contains(b)) continue;
 
       final nextDate = _nextBirthday(b);
-
       if (lastHeaderDate == null ||
           nextDate.year != lastHeaderDate.year ||
           nextDate.month != lastHeaderDate.month) {
         final label = (nextDate.year != now.year)
             ? "${DateFormat.MMMM().format(nextDate)} ${nextDate.year}"
             : DateFormat.MMMM().format(nextDate);
-        displayItems.add(_GroupedItem.header(label));
+        updatedDisplayItems.add(_GroupedItem.header(label));
         lastHeaderDate = nextDate;
       }
 
-      displayItems.add(_GroupedItem.birthday(b));
+      updatedDisplayItems.add(_GroupedItem.birthday(b));
     }
+
+    setState(() {
+      displayItems = updatedDisplayItems;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAndGroupBirthdays();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final themeController = Provider.of<ThemeController>(context);
+    final palette = themeController.getPalette(brightness);
+
+    final now = DateTime.now();
+
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sept",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
 
     String getInitials(String name) {
       final clean = name
@@ -116,101 +130,134 @@ class Gregorian extends StatelessWidget {
     }
 
     return Scaffold(
-      body: ListView.builder(
-        itemCount: displayItems.length,
-        itemBuilder: (context, index) {
-          final item = displayItems[index];
-          if (item.isHeader) {
-            return Padding(
-              padding: const EdgeInsets.only(left: 5, right: 5, top: 10),
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 15),
-                child: Text(
-                  item.header!,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: palette.accentColor,
-                    fontWeight: FontWeight.bold,
+      body: displayItems.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Lottie.asset(
+                    'assets/lottie/empty.json',
+                    width: 200,
+                    height: 200,
+                    repeat: true,
+                    animate: true,
                   ),
-                ),
-              ),
-            );
-          } else {
-            final b = item.birthday!;
-            final formatted = "${b.day} ${months[b.month + 1]}";
-            final age = b.calculatedAge;
-
-            // FIXME: fetch details from the database or storage and load the list
-            // TODO: load the list everytime a new bithday is added
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child: ListTile(
-                leading: LayoutBuilder(
-                  builder: (context, constraints) {
-                    double size = constraints.maxHeight * 0.85;
-                    return Container(
-                      height: size,
-                      width: size,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(size / 2),
-                        border: Border.all(color: palette.divider),
-                      ),
-                      child: Center(
-                        child: Text(
-                          getInitials(b.name),
-                          style: TextStyle(
-                            color: palette.accentColor,
-                            fontSize: size * (1 / 2),
-                            fontWeight: FontWeight.bold,
-                            fontFamily: "Akaya",
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                title: Text(
-                  b.name,
-                  style: TextStyle(
-                    color: palette.text,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    b.relation != null
-                        ? Text(
-                            b.reference != null
-                                ? "${b.relation!} -  ${b.reference!}"
-                                : b.relation!,
-                            style: TextStyle(color: palette.secondaryText),
-                          )
-                        : SizedBox.shrink(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          formatted,
-                          style: TextStyle(color: palette.secondaryText),
-                        ),
-                        Text(
-                          age != null
-                              ? (b.day == now.day && b.month == now.month
-                                    ? "Turned ${age + 1}"
-                                    : "Turning ${age + 1}")
-                              : "",
-                          style: TextStyle(color: palette.secondaryText),
-                        ),
-                      ],
+                  Text(
+                    "Nothing to Display here",
+                    style: TextStyle(
+                      color: palette.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
+                  ),
+                  Text(
+                    "Click on '+' to add new birthdays",
+                    style: TextStyle(
+                      color: palette.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 100),
+                ],
               ),
-            );
-          }
-        },
-      ),
+            )
+          : ListView.builder(
+              itemCount: displayItems.length,
+              itemBuilder: (context, index) {
+                final item = displayItems[index];
+                if (item.isHeader) {
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 5, right: 5, top: 10),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 15),
+                      child: Text(
+                        item.header!,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: palette.accentColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
+                } else {
+                  final b = item.birthday!;
+                  final formatted = "${b.day} ${months[b.month - 1]} ${b.year}";
+                  final age = b.calculatedAge;
+
+                  return Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: ListTile(
+                      leading: LayoutBuilder(
+                        builder: (context, constraints) {
+                          double size = constraints.maxHeight * 0.85;
+                          return Container(
+                            height: size,
+                            width: size,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(size / 2),
+                              border: Border.all(color: palette.divider),
+                            ),
+                            child: Center(
+                              child: Text(
+                                getInitials(b.name),
+                                style: TextStyle(
+                                  color: palette.accentColor,
+                                  fontSize: size * (1 / 2),
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: "Akaya",
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      title: Text(
+                        b.name,
+                        style: TextStyle(
+                          color: palette.text,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          b.relation != null
+                              ? Text(
+                                  b.reference != null
+                                      ? "${b.relation!} -  ${b.reference!}"
+                                      : b.relation!,
+                                  style: TextStyle(
+                                    color: palette.secondaryText,
+                                  ),
+                                )
+                              : SizedBox.shrink(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                formatted,
+                                style: TextStyle(color: palette.secondaryText),
+                              ),
+                              Text(
+                                age != null
+                                    ? (b.day == now.day && b.month == now.month
+                                          ? "Turned ${age + 1}"
+                                          : "Turning ${age + 1}")
+                                    : "",
+                                style: TextStyle(color: palette.secondaryText),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
       floatingActionButton: Padding(
         padding: EdgeInsets.symmetric(horizontal: 5, vertical: 15),
         child: SizedBox(
@@ -262,7 +309,10 @@ class Gregorian extends StatelessWidget {
             maxChildSize: 0.90,
             expand: false,
             builder: (context, scrollController) {
-              return AddBirthdayForm(scrollController: scrollController);
+              return AddBirthdayForm(
+                scrollController: scrollController,
+                onBirthdayAdded: fetchAndGroupBirthdays,
+              );
             },
           ),
         );

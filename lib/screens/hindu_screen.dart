@@ -47,6 +47,7 @@ class _HinduState extends State<Hindu> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            SizedBox(height: 100),
           ],
         ),
       ),

@@ -7,7 +7,13 @@ import 'package:flutter/services.dart';
 
 class AddBirthdayForm extends StatefulWidget {
   final ScrollController scrollController;
-  const AddBirthdayForm({super.key, required this.scrollController});
+  final VoidCallback? onBirthdayAdded;
+
+  const AddBirthdayForm({
+    super.key,
+    required this.scrollController,
+    this.onBirthdayAdded,
+  });
 
   @override
   State<AddBirthdayForm> createState() => _AddBirthdayFormState();
@@ -101,7 +107,7 @@ class _AddBirthdayFormState extends State<AddBirthdayForm> {
           .map(
             (e) => e.isNotEmpty ? '${e[0].toUpperCase()}${e.substring(1)}' : '',
           )
-          .join();
+          .join(' ');
     }
 
     int daysInMonth(int month, int year) {
@@ -522,7 +528,7 @@ class _AddBirthdayFormState extends State<AddBirthdayForm> {
                       ),
                       cursorColor: Colors.blue[300],
                       style: TextStyle(color: palette.text),
-                      keyboardType: TextInputType.phone,
+                      keyboardType: TextInputType.name,
                     ),
                     SizedBox(height: 15),
                     // Whatsapp Number
@@ -817,11 +823,13 @@ class _AddBirthdayFormState extends State<AddBirthdayForm> {
                           newBirthday,
                         );
 
+                        widget.onBirthdayAdded?.call();
+
                         if (!context.mounted) return;
 
                         showCustomToast(
                           context,
-                          "New Birthday added to cherish",
+                          "New Birthday added to Cherish",
                         );
                         Navigator.of(context).pop();
                       }
