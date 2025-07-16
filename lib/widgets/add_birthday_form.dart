@@ -8,11 +8,13 @@ import 'package:flutter/services.dart';
 class AddBirthdayForm extends StatefulWidget {
   final ScrollController scrollController;
   final VoidCallback? onBirthdayAdded;
+  final Birthday? existingBirthday;
 
   const AddBirthdayForm({
     super.key,
     required this.scrollController,
     this.onBirthdayAdded,
+    this.existingBirthday,
   });
 
   @override
@@ -61,6 +63,56 @@ class _AddBirthdayFormState extends State<AddBirthdayForm> {
     "1 day before",
     "Custom",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.existingBirthday != null) {
+      final b = widget.existingBirthday!;
+      nameController.text = b.name;
+      selectedDay = b.day;
+      selectedMonth = b.month;
+      if (b.year != null) {
+        selectedMode = InputMode.year;
+        year = b.year;
+        age = DateTime.now().year - b.year!;
+        ageYearController.text = b.year.toString();
+      }
+      if (commonRelations.contains(b.relation)) {
+        selectedRelation = b.relation;
+      } else {
+        selectedRelation = "Other";
+        customRelationController.text = b.relation ?? '';
+      }
+      referenceController.text = b.reference ?? '';
+      whatsappController.text = b.whatsapp ?? '';
+      emailController.text = b.email ?? '';
+      instagramController.text = b.instagram ?? '';
+
+      int fetchedReminder = b.remindBefore!.inMinutes;
+
+      if (fetchedReminder == 0) {
+        selectedRemindBefore = "At 12 AM";
+      } else if (fetchedReminder == 5) {
+        selectedRemindBefore = "5 minutes before";
+      } else if (fetchedReminder == 60) {
+        selectedRemindBefore = "1 hour before";
+      } else if (fetchedReminder == 24 * 60) {
+        selectedRemindBefore = "1 day before";
+      } else {
+        selectedRemindBefore = "Custom";
+
+        final days = fetchedReminder ~/ (24 * 60);
+        final hours = (fetchedReminder % (24 * 60)) ~/ 60;
+        final minutes = fetchedReminder % 60;
+
+        customDayController.text = days.toString();
+        customHourController.text = hours.toString();
+        customMinutesController.text = minutes.toString();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -556,6 +608,10 @@ class _AddBirthdayFormState extends State<AddBirthdayForm> {
                           if (!RegExp(r'^\d+$').hasMatch(value)) {
                             return "Only numbers allowed";
                           }
+                          if (int.parse(value) > 9999999999 ||
+                              int.parse(value) < 6000000000) {
+                            return "Invalid number.";
+                          }
                         }
                         return null;
                       },
@@ -819,18 +875,30 @@ class _AddBirthdayFormState extends State<AddBirthdayForm> {
                           remindBefore: Duration(minutes: remindBeforeMinutes!),
                         );
 
-                        await BirthdayDatabase.instance.insertBirthday(
-                          newBirthday,
-                        );
+                        if (widget.existingBirthday != null) {
+                          final updated = newBirthday.copyWith(
+                            id: widget.existingBirthday!.id,
+                          );
+                          await BirthdayDatabase.instance.updateBirthday(
+                            updated,
+                          );
+                          if (!context.mounted) return;
+
+                          showCustomToast(context, "Update successful.");
+                        } else {
+                          await BirthdayDatabase.instance.insertBirthday(
+                            newBirthday,
+                          );
+
+                          if (!context.mounted) return;
+
+                          showCustomToast(
+                            context,
+                            "New Birthday added to Cherish",
+                          );
+                        }
 
                         widget.onBirthdayAdded?.call();
-
-                        if (!context.mounted) return;
-
-                        showCustomToast(
-                          context,
-                          "New Birthday added to Cherish",
-                        );
                         Navigator.of(context).pop();
                       }
                     },
@@ -839,7 +907,7 @@ class _AddBirthdayFormState extends State<AddBirthdayForm> {
                       foregroundColor: palette.backgroundColor,
                     ),
                     child: Text(
-                      "Add",
+                      widget.existingBirthday == null ? "Add" : "Update",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),

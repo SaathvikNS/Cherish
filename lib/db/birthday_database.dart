@@ -53,6 +53,21 @@ class BirthdayDatabase {
     return result.map((map) => Birthday.fromMap(map)).toList();
   }
 
+  Future<void> deleteBirthday(int id) async {
+    final db = await instance.database;
+    await db.delete('birthdays', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> updateBirthday(Birthday birthday) async {
+    final db = await instance.database;
+    await db.update(
+      'birthdays',
+      birthday.toMap(),
+      where: 'id = ?',
+      whereArgs: [birthday.id],
+    );
+  }
+
   Future close() async {
     final db = await instance.database;
     db.close();

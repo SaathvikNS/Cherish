@@ -1,4 +1,6 @@
 import 'package:cherish/models/birthday.dart';
+import 'package:cherish/utils/birthday_context_menu.dart';
+import 'package:cherish/utils/helpers.dart';
 import 'package:cherish/utils/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -187,71 +189,97 @@ class _GregorianState extends State<Gregorian> {
                   final formatted = "${b.day} ${months[b.month - 1]} ${b.year}";
                   final age = b.calculatedAge;
 
-                  return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: ListTile(
-                      leading: LayoutBuilder(
-                        builder: (context, constraints) {
-                          double size = constraints.maxHeight * 0.85;
-                          return Container(
-                            height: size,
-                            width: size,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(size / 2),
-                              border: Border.all(color: palette.divider),
-                            ),
-                            child: Center(
-                              child: Text(
-                                getInitials(b.name),
-                                style: TextStyle(
-                                  color: palette.accentColor,
-                                  fontSize: size * (1 / 2),
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: "Akaya",
-                                ),
-                              ),
-                            ),
+                  return GestureDetector(
+                    onLongPressStart: (details) {
+                      showBirthdayContextMenu(
+                        context: context,
+                        positoin: details.globalPosition,
+                        birthday: b,
+                        palette: palette,
+                        onEdit: () {
+                          _openEditBirthdaySheet(context, b);
+                        },
+                        onDelete: () {
+                          confirmAndDelete(
+                            context: context,
+                            birthday: b,
+                            palette: palette,
+                            onBirthdayDelete: fetchAndGroupBirthdays,
                           );
                         },
-                      ),
-                      title: Text(
-                        b.name,
-                        style: TextStyle(
-                          color: palette.text,
-                          fontWeight: FontWeight.bold,
+                      );
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: ListTile(
+                        leading: LayoutBuilder(
+                          builder: (context, constraints) {
+                            double size = constraints.maxHeight * 0.85;
+                            return Container(
+                              height: size,
+                              width: size,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(size / 2),
+                                border: Border.all(color: palette.divider),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  getInitials(b.name),
+                                  style: TextStyle(
+                                    color: palette.accentColor,
+                                    fontSize: size * (1 / 2),
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: "Akaya",
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          b.relation != null
-                              ? Text(
-                                  b.reference != null
-                                      ? "${b.relation!} -  ${b.reference!}"
-                                      : b.relation!,
+                        title: Text(
+                          b.name,
+                          style: TextStyle(
+                            color: palette.text,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            b.relation != null
+                                ? Text(
+                                    b.reference != null
+                                        ? "${b.relation!} -  ${b.reference!}"
+                                        : b.relation!,
+                                    style: TextStyle(
+                                      color: palette.secondaryText,
+                                    ),
+                                  )
+                                : SizedBox.shrink(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  formatted,
                                   style: TextStyle(
                                     color: palette.secondaryText,
                                   ),
-                                )
-                              : SizedBox.shrink(),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                formatted,
-                                style: TextStyle(color: palette.secondaryText),
-                              ),
-                              Text(
-                                age != null
-                                    ? (b.day == now.day && b.month == now.month
-                                          ? "Turned ${age + 1}"
-                                          : "Turning ${age + 1}")
-                                    : "",
-                                style: TextStyle(color: palette.secondaryText),
-                              ),
-                            ],
-                          ),
-                        ],
+                                ),
+                                Text(
+                                  age != null
+                                      ? (b.day == now.day &&
+                                                b.month == now.month
+                                            ? "Turned ${age + 1}"
+                                            : "Turning ${age + 1}")
+                                      : "",
+                                  style: TextStyle(
+                                    color: palette.secondaryText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -311,6 +339,34 @@ class _GregorianState extends State<Gregorian> {
             builder: (context, scrollController) {
               return AddBirthdayForm(
                 scrollController: scrollController,
+                onBirthdayAdded: fetchAndGroupBirthdays,
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _openEditBirthdaySheet(BuildContext context, Birthday birthday) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: DraggableScrollableSheet(
+            initialChildSize: 2 / 3,
+            minChildSize: 0.5,
+            maxChildSize: 0.90,
+            expand: false,
+            builder: (context, scrollController) {
+              return AddBirthdayForm(
+                scrollController: scrollController,
+                existingBirthday: birthday,
                 onBirthdayAdded: fetchAndGroupBirthdays,
               );
             },

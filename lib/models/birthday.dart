@@ -27,6 +27,36 @@ class Birthday {
     this.remindBefore,
   });
 
+  Birthday copyWith({
+    int? id,
+    String? name,
+    int? day,
+    int? month,
+    int? year,
+    int? age,
+    String? relation,
+    String? reference,
+    String? whatsapp,
+    String? email,
+    String? instagram,
+    Duration? remindBefore,
+  }) {
+    return Birthday(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      day: day ?? this.day,
+      month: month ?? this.month,
+      relation: relation ?? this.relation,
+      reference: reference ?? this.reference,
+      year: year ?? this.year,
+      age: age ?? this.age,
+      whatsapp: whatsapp ?? this.whatsapp,
+      email: email ?? this.email,
+      instagram: instagram ?? this.instagram,
+      remindBefore: remindBefore ?? this.remindBefore,
+    );
+  }
+
   int? get calculatedYear {
     if (year != null) return year;
     if (age != null) {
