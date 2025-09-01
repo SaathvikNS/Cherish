@@ -1,6 +1,7 @@
 import 'package:cherish/models/birthday.dart';
 import 'package:cherish/utils/birthday_context_menu.dart';
 import 'package:cherish/utils/helpers.dart';
+import 'package:cherish/utils/noti_service.dart';
 import 'package:cherish/utils/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -137,13 +138,22 @@ class _GregorianState extends State<Gregorian> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Lottie.asset(
-                    'assets/lottie/empty.json',
-                    width: 200,
-                    height: 200,
-                    repeat: true,
-                    animate: true,
+                  ElevatedButton(
+                    onPressed: () {
+                      NotiService().showNotifications(
+                        title: "I am the title",
+                        body: "this is the body of the title in long form",
+                      );
+                    },
+                    child: const Text("Send Notification"),
                   ),
+                  // Lottie.asset(
+                  //   'assets/lottie/empty.json',
+                  //   width: 200,
+                  //   height: 200,
+                  //   repeat: true,
+                  //   animate: true,
+                  // ),
                   Text(
                     "Nothing to Display here",
                     style: TextStyle(

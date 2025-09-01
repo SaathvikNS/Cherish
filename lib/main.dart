@@ -1,3 +1,4 @@
+import 'package:cherish/utils/noti_service.dart';
 import 'package:cherish/utils/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +6,9 @@ import 'package:cherish/layout.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  NotiService().initNotification();
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeController(),
