@@ -147,13 +147,13 @@ class _GregorianState extends State<Gregorian> {
                     },
                     child: const Text("Send Notification"),
                   ),
-                  // Lottie.asset(
-                  //   'assets/lottie/empty.json',
-                  //   width: 200,
-                  //   height: 200,
-                  //   repeat: true,
-                  //   animate: true,
-                  // ),
+                  Lottie.asset(
+                    'assets/lottie/empty.json',
+                    width: 200,
+                    height: 200,
+                    repeat: true,
+                    animate: true,
+                  ),
                   Text(
                     "Nothing to Display here",
                     style: TextStyle(
